@@ -1,0 +1,128 @@
+<?php session_start(); ini_set('display_errors', 
+1); ini_set('display_startup_errors', 1); 
+error_reporting(E_ALL); class PurchaseRepository 
+{
+    private $conn; public function 
+    __construct($servername, $username, 
+    $password, $dbname) {
+        $this->conn = new mysqli($servername, 
+        $username, $password, $dbname); if 
+        ($this->conn->connect_error) {
+            throw new Exception("Connection 
+            failed: " . 
+            $this->conn->connect_error);
+        }
+        $this->conn->set_charset("utf8mb4");
+    }
+    public function 
+    getPurchaseHistoryByEmail($email) {
+        $sql = "SELECT id, email, user_id, 
+        transaction_hash, amount_trx, 
+        deposit_address, created_at
+                FROM purchases WHERE email = ? 
+                ORDER BY created_at DESC";
+        $stmt = $this->conn->prepare($sql); 
+        $stmt->bind_param("s", $email); 
+        $stmt->execute(); $result = 
+        $stmt->get_result(); $purchases = []; if 
+        ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) 
+            {
+                $purchases[] = $row;
+            }
+        }
+        $stmt->close(); return $purchases;
+    }
+    public function __destruct() { 
+        $this->conn->close();
+    }
+}
+class PurchaseController { private 
+    $purchaseRepository; public function 
+    __construct($servername, $username, 
+    $password, $dbname) {
+        $this->purchaseRepository = new 
+        PurchaseRepository($servername, 
+        $username, $password, $dbname);
+    }
+    public function displayPurchaseHistory() { 
+        try {
+            $purchases = 
+            $this->purchaseRepository->getPurchaseHistoryByEmail($_SESSION['email']); 
+            $this->renderPurchaseTable($purchases);
+        } catch (Exception $e) {
+            error_log($e->getMessage()); 
+            $this->renderErrorMessage("Error 
+            retrieving purchase information. 
+            Please try again later.");
+        }
+    }
+    private function 
+    renderPurchaseTable($purchases) {
+        ?> <!DOCTYPE html> <html lang="en"> 
+        <head>
+            <meta charset="UTF-8"> <meta 
+            name="viewport" 
+            content="width=device-width, 
+            initial-scale=1.0"> <title>Purchase 
+            History</title> <link 
+            rel="stylesheet" href="styles.css">
+        </head> <body> <div 
+        class="table-container">
+            <table> <thead> <tr> <th>Email</th> 
+                        <th>User ID</th> 
+                        <th>Transaction Hash</th> 
+                        <th>Deposit Address</th> 
+                        <th>Amount (TRX)</th> 
+                        <th>Created At</th>
+                    </tr> </thead> <tbody> <?php 
+                    foreach ($purchases as 
+                    $purchase): ?>
+                        <tr> <td><?php echo 
+                            htmlspecialchars($purchase['email'] 
+                            ?? ''); ?></td> 
+                            <td><?php echo 
+                            htmlspecialchars($purchase['user_id'] 
+                            ?? ''); ?></td> <td 
+                            class="hash-cell"><?php 
+                            echo 
+                            htmlspecialchars($purchase['transaction_hash'] 
+                            ?? ''); ?></td> <td 
+                            class="hash-cell"><?php 
+                            echo 
+                            htmlspecialchars($purchase['deposit_address'] 
+                            ?? ''); ?></td> <td 
+                            class="amount-cell"><?php 
+                            echo 
+                            htmlspecialchars($purchase['amount_trx'] 
+                            ?? ''); ?></td> <td 
+                            class="date-cell"><?php 
+                            echo 
+                            htmlspecialchars(date('Y/m/d 
+                            H:i', 
+                            strtotime($purchase['created_at']))); 
+                            ?></td>
+                        </tr> <?php endforeach; 
+                    ?>
+                </tbody> </table> </div> </body> 
+        </html> <?php
+    }
+    private function renderErrorMessage($message) 
+    {
+        ?> <div class="empty-message"><?php echo 
+        $message; ?></div> <?php
+    }
+}
+try { $servername = "localhost"; $username = 
+    "gold24_user"; $password = "random_password"; 
+    $dbname = "gold24_db"; $purchaseController = 
+    new PurchaseController($servername, 
+    $username, $password, $dbname); 
+    $purchaseController->displayPurchaseHistory();
+} catch (Exception $e) {
+    error_log($e->getMessage()); 
+    $purchaseController->renderErrorMessage("An 
+    unexpected error occurred. Please try again 
+    later.");
+}
+?>

@@ -1,0 +1,126 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta 
+    charset="UTF-8"> <meta name="viewport" 
+    content="width=device-width, 
+    initial-scale=1.0"> <title>Lesson Lock 
+    Manager</title> <style>
+        body { background: #1C1C1C; font-family: 
+            Arial, sans-serif; color: white; 
+            padding: 20px; margin: 0;
+        }
+        .container { max-width: 800px; margin: 0 
+            auto; background: #2B1B17; padding: 
+            20px; border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input[type="text"], input[type="email"] { 
+            width: 100%; padding: 8px; margin: 
+            10px 0; border: 1px solid #654321; 
+            border-radius: 4px; background: 
+            #1C1C1C;
+            color: white;
+        }
+        .lessons-grid { display: grid; 
+            grid-template-columns: 
+            repeat(auto-fill, minmax(150px, 
+            1fr)); gap: 10px; margin: 20px 0;
+        }
+        .lesson-check { display: flex; 
+            align-items: center; background: 
+            #1C1C1C;
+            padding: 10px; border-radius: 4px;
+        }
+        button { background: #8B0000; color: 
+            white; border: none; padding: 10px 
+            20px; border-radius: 4px; cursor: 
+            pointer; margin: 5px;
+        }
+        button:hover { background: #800000;
+        }
+        #result {
+            margin-top: 20px; padding: 10px; 
+            border-radius: 4px;
+        }
+        .success { background: #006400; } .error 
+        { background: #8B0000; }
+    </style> </head> <body> <div 
+    class="container">
+        <h2>Lesson Lock Manager</h2> <form 
+        id="lockForm">
+            <input type="text" id="uid" 
+            placeholder="Enter UID"> <input 
+            type="email" id="email" 
+            placeholder="Enter Email"> <input 
+            type="text" id="key" 
+            placeholder="Enter key (ai2025)">
+            
+            <div class="lessons-grid"> <div 
+                class="lesson-check">
+                    <input type="checkbox" 
+                    name="lesson" value="12"> 
+                    <label>Lesson 12</label>
+                </div> </div> <button 
+            type="button" 
+            onclick="handleLockAction('unlock')">Unlock</button> 
+            <button type="button" 
+            onclick="handleLockAction('lock')">Lock</button>
+        </form> <div id="result"></div> </div> 
+    <script>
+        function handleLockAction(action) { const 
+            uid = 
+            document.getElementById('uid').value; 
+            const email = 
+            document.getElementById('email').value; 
+            const key = 
+            document.getElementById('key').value; 
+            const selectedLessons = 
+            Array.from(document.querySelectorAll('input[name="lesson"]:checked'))
+                .map(cb => cb.value); const 
+            result = 
+            document.getElementById('result');
+            
+            if (!uid && !email) { 
+                result.textContent = 'Please 
+                provide either UID or Email'; 
+                result.className = 'error'; 
+                return;
+            }
+            if (!key) { result.textContent = 
+                'Please enter the key'; 
+                result.className = 'error'; 
+                return;
+            }
+            if (selectedLessons.length === 0) { 
+                result.textContent = 'Please 
+                select at least one lesson'; 
+                result.className = 'error'; 
+                return;
+            }
+            fetch('/English/unlock_lesson.php', { 
+                method: 'POST', headers: {
+                    'Content-Type': 
+                    'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ 
+                    'action': action, 
+                    'lesson_id': 
+                    selectedLessons[0], 'uid': 
+                    uid, 'email': email, 
+                    'unlock_key': key
+                })
+            })
+            .then(response => response.text()) 
+            .then(data => {
+                result.textContent = data; 
+                result.className = 
+                data.includes('Success') ? 
+                'success' : 'error';
+            })
+            .catch(error => { 
+                console.error('Error:', error); 
+                result.textContent = 'Error 
+                connecting to server'; 
+                result.className = 'error';
+            });
+        }
+    </script> </body>
+</html>

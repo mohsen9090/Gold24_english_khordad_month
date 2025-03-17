@@ -1,0 +1,50 @@
+server { listen 443 ssl; server_name gold24.io 
+    www.gold24.io; ssl_certificate 
+    /etc/letsencrypt/live/gold24.io/fullchain.pem; 
+    ssl_certificate_key 
+    /etc/letsencrypt/live/gold24.io/privkey.pem; 
+    ssl_protocols TLSv1.2 TLSv1.3; 
+    ssl_prefer_server_ciphers on; ssl_ciphers 
+    HIGH:!aNULL:!MD5; root /var/www/html/; index 
+    index.php index.html index.htm;
+    # نمایش لیست دایرکتوری‌ها و دسترسی به همه 
+    # فایل‌ها
+    location / { try_files $uri $uri/ 
+        /index.php?$args; autoindex on;
+    }
+    # پردازش فایل‌های PHP
+    location ~ \.php$ { include 
+        snippets/fastcgi-php.conf; fastcgi_pass 
+        unix:/run/php/php8.1-fpm.sock; 
+        fastcgi_param SCRIPT_FILENAME 
+        $document_root$fastcgi_script_name; 
+        include fastcgi_params;
+    }
+    # جلوگیری از دسترسی به فایل‌های مخفی (مثل 
+    # .htaccess)
+    location ~ /\.ht { deny all;
+    }
+    # جلوگیری از دسترسی مستقیم به فایل‌های PHP در 
+    # دروس
+    location ~ ^/English/lesson[0-9]+\.html$ { 
+        allow all;
+    }
+    # دسترسی به فایل‌های استاتیک (css, js, images, 
+    # fonts)
+    location ~* 
+    \.(?:css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|svg)$
+ 
+    {
+        expires max; log_not_found off; 
+        access_log off;
+    }
+    # لاگ‌های سرور
+    access_log 
+    /var/log/nginx/gold24.io.access.log; 
+    error_log /var/log/nginx/gold24.io.error.log;
+}
+# ریدایرکت از HTTP به HTTPS
+server { listen 80; server_name gold24.io 
+    www.gold24.io; return 301 
+    https://$host$request_uri;
+}

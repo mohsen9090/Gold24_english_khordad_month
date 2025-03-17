@@ -1,0 +1,335 @@
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Database connection
+const db = mysql.createConnection({
+    host: 'gold24.io',
+    user: 'gold24_user',
+    password: 'random_password',
+    database: 'gold24_db',
+    port: 3306,
+    multipleStatements: true
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error('Status: Database connection failed -', err);
+        return;
+    }
+    console.log('Status: Successfully connected to database');
+});
+
+// Main page
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Lessons Lock Control</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background: #1C1C1C;
+                    color: white;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: #2B1B17;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                }
+                input[type="text"], input[type="email"], input[type="password"] {
+                    width: 100%;
+                    padding: 8px;
+                    margin: 10px 0;
+                    border: 1px solid #654321;
+                    border-radius: 4px;
+                    background: #1C1C1C;
+                    color: white;
+                }
+                .lessons-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                    gap: 10px;
+                    margin: 20px 0;
+                }
+                .lesson-check {
+                    display: flex;
+                    align-items: center;
+                    background: #1C1C1C;
+                    padding: 10px;
+                    border-radius: 4px;
+                }
+                button {
+                    background: #8B0000;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin: 5px;
+                }
+                button:hover {
+                    background: #800000;
+                }
+                #result {
+                    margin-top: 20px;
+                    padding: 10px;
+                    border-radius: 4px;
+                }
+                .success { background: #006400; }
+                .error { background: #8B0000; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Lessons Lock Control</h2>
+                <form id="lockForm">
+                    <input type="text" id="uid" placeholder="Enter UID">
+                    <input type="email" id="email" placeholder="Enter Email">
+                    <input type="password" id="key" placeholder="Enter key (ai2025)">
+                    
+                    <div class="lessons-grid">
+                        ${Array.from({length: 12}, (_, i) => i + 1).map(num => `
+                            <div class="lesson-check">
+                                <input type="checkbox" name="lesson" value="${num}">
+                                <label>Lesson ${num}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button type="button" onclick="handleLock('unlock')">Unlock Selected</button>
+                    <button type="button" onclick="handleLock('lock')">Lock Selected</button>
+                </form>
+                <div id="result"></div>
+            </div>
+
+            <script>
+                async function handleLock(action) {
+                    const uid = document.getElementById('uid').value;
+                    const email = document.getElementById('email').value;
+                    const key = document.getElementById('key').value;
+                    const selectedLessons = Array.from(document.querySelectorAll('input[name="lesson"]:checked'))
+                        .map(cb => parseInt(cb.value));
+                    const result = document.getElementById('result');
+                    
+                    if (!uid && !email) {
+                        result.textContent = 'Please provide either UID or Email';
+                        result.className = 'error';
+                        return;
+                    }
+
+                    if (!key) {
+                        result.textContent = 'Please enter the key';
+                        result.className = 'error';
+                        return;
+                    }
+
+                    if (selectedLessons.length === 0) {
+                        result.textContent = 'Please select at least one lesson';
+                        result.className = 'error';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/' + action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                key,
+                                uid,
+                                email,
+                                lessons: selectedLessons
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        result.textContent = data.message || data.error;
+                        result.className = data.success ? 'success' : 'error';
+                    } catch (error) {
+                        console.error('Error:', error);
+                        result.textContent = 'Error connecting to server';
+                        result.className = 'error';
+                    }
+                }
+            </script>
+        </body>
+        </html>
+    `);
+});
+
+// Lock route
+app.post('/api/lock', async (req, res) => {
+    try {
+        const { key, uid, email, lessons } = req.body;
+        
+        if (key !== 'ai2025') {
+            return res.json({ success: false, error: 'Invalid key' });
+        }
+
+        if (!uid && !email) {
+            return res.json({ success: false, error: 'Please provide either UID or Email' });
+        }
+
+        if (!lessons || !Array.isArray(lessons) || lessons.length === 0) {
+            return res.json({ success: false, error: 'No lessons selected' });
+        }
+
+        for (const lessonId of lessons) {
+            try {
+                // Check if record exists
+                const [rows] = await db.promise().query(
+                    'SELECT id FROM lesson_locks WHERE lesson_id = ? AND user_id = ?',
+                    [lessonId, uid]
+                );
+
+                if (rows.length > 0) {
+                    // Update existing record
+                    await db.promise().query(
+                        `UPDATE lesson_locks 
+                        SET is_locked = 1,
+                            unlock_date = CURRENT_TIMESTAMP,
+                            user_email = ?
+                        WHERE lesson_id = ? AND user_id = ?`,
+                        [email, lessonId, uid]
+                    );
+                } else {
+                    // Insert new record
+                    await db.promise().query(
+                        `INSERT INTO lesson_locks 
+                        (lesson_id, user_id, user_email, is_locked, unlock_date)
+                        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)`,
+                        [lessonId, uid, email]
+                    );
+                }
+            } catch (error) {
+                console.error(`Error processing lesson ${lessonId}:`, error);
+                return res.json({ 
+                    success: false, 
+                    error: `Error processing lesson ${lessonId}`
+                });
+            }
+        }
+
+        // Log the action
+        await db.promise().query(
+            "INSERT INTO lock_history (uid, email, action, lessons) VALUES (?, ?, 'lock', ?)",
+            [uid, email, lessons.join(',')]
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'All lessons locked successfully!' 
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.json({ 
+            success: false, 
+            error: 'Server error occurred' 
+        });
+    }
+});
+
+// Unlock route
+app.post('/api/unlock', async (req, res) => {
+    try {
+        const { key, uid, email, lessons } = req.body;
+        
+        if (key !== 'ai2025') {
+            return res.json({ success: false, error: 'Invalid key' });
+        }
+
+        if (!uid && !email) {
+            return res.json({ success: false, error: 'Please provide either UID or Email' });
+        }
+
+        if (!lessons || !Array.isArray(lessons) || lessons.length === 0) {
+            return res.json({ success: false, error: 'No lessons selected' });
+        }
+
+        for (const lessonId of lessons) {
+            try {
+                // Check if record exists
+                const [rows] = await db.promise().query(
+                    'SELECT id FROM lesson_locks WHERE lesson_id = ? AND user_id = ?',
+                    [lessonId, uid]
+                );
+
+                if (rows.length > 0) {
+                    // Update existing record
+                    await db.promise().query(
+                        `UPDATE lesson_locks 
+                        SET is_locked = 0,
+                            unlock_date = CURRENT_TIMESTAMP,
+                            user_email = ?
+                        WHERE lesson_id = ? AND user_id = ?`,
+                        [email, lessonId, uid]
+                    );
+                } else {
+                    // Insert new record
+                    await db.promise().query(
+                        `INSERT INTO lesson_locks 
+                        (lesson_id, user_id, user_email, is_locked, unlock_date)
+                        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+                        [lessonId, uid, email]
+                    );
+                }
+            } catch (error) {
+                console.error(`Error processing lesson ${lessonId}:`, error);
+                return res.json({ 
+                    success: false, 
+                    error: `Error processing lesson ${lessonId}`
+                });
+            }
+        }
+
+        // Log the action
+        await db.promise().query(
+            "INSERT INTO lock_history (uid, email, action, lessons) VALUES (?, ?, 'unlock', ?)",
+            [uid, email, lessons.join(',')]
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'All lessons unlocked successfully!' 
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.json({ 
+            success: false, 
+            error: 'Server error occurred' 
+        });
+    }
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+    console.error('Status: Server error -', err.stack);
+    res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error' 
+    });
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Lock/Unlock server running on port ${PORT}`);
+});

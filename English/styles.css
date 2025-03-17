@@ -1,0 +1,50 @@
+:root {
+    --primary: #D4AF37; /* طلایی */ --secondary: 
+    #B8860B; /* طلایی تیره */
+    --accent: #FFD700; /* طلایی روشن */ 
+    --background: #2C1810; /* قهوه‌ای تیره */ 
+    --card-bg: #3C2A1C; /* قهوه‌ای متوسط */ 
+    --text: #FFF;
+}
+* { box-sizing: border-box; margin: 0; padding: 
+    0;
+}
+body { background: var(--background); 
+    font-family: 'Vazirmatn', sans-serif; color: 
+    var(--text); padding: 20px;
+}
+.table-container { width: 100%; overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; 
+    background: var(--card-bg); border-radius: 
+    12px; overflow: hidden; box-shadow: 0 4px 
+    30px rgba(0,0,0,0.4);
+}
+thead { background: var(--primary); color: black; 
+    font-weight: bold;
+}
+th, td { padding: 15px; text-align: center; 
+    border-bottom: 1px solid var(--secondary);
+}
+tbody tr { transition: all 0.3s;
+}
+tbody tr:hover { background: rgba(255, 215, 0, 
+    0.2);
+}
+.hash-cell { font-family: 'Courier New', 
+    monospace; font-size: 14px; color: 
+    var(--accent); word-break: break-word; 
+    max-width: 200px; overflow: hidden; 
+    text-overflow: ellipsis;
+}
+.amount-cell { font-weight: bold; color: 
+    var(--accent);
+}
+.date-cell { font-size: 14px; font-style: italic; 
+    color: var(--text);
+}
+.empty-message { text-align: center; padding: 
+    20px; background: rgba(255, 0, 0, 0.1); 
+    color: #FF4500; font-size: 18px; 
+    border-radius: 10px;
+}
