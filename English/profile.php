@@ -30,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $new_phone = trim($_POST['phone']) ?: ''; 
     $new_city = trim($_POST['city']) ?: ''; if 
     (empty($new_username)) {
-        echo "<script>alert('نام کاربری الزامی 
-        است');</script>";
+        echo "<script>alert('نام کاربری الزامی ‎ 
+است');</script>";
     } else {
         $update_stmt = $conn->prepare("UPDATE 
         users SET username=?, phone=?, city=? 
@@ -40,9 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $new_username, $new_phone, $new_city, 
         $user_uuid); if ($update_stmt->execute()) 
         {
-            echo "<script>alert('اطلاعات با 
-            موفقیت بروزرسانی 
-            شد');window.location.reload();</script>";
+            echo "<script>alert('اطلاعات با ‎ 
+موفقیت بروزرسانی ‎ 
+شد');window.location.reload();</script>";
         }
     }
 }
@@ -50,12 +50,12 @@ $conn->close(); ?> <!DOCTYPE html> <html
 lang="fa" dir="rtl"> <head>
     <meta charset="UTF-8"> <meta name="viewport" 
     content="width=device-width, 
-    initial-scale=1.0"> <title>پروفایل 
-    کاربری</title> <style>
+    initial-scale=1.0"> <title>پروفایل
+‎ کاربری</title> <style>
         :root {
             --dark-brown: #3C2A21; 
             --medium-brown: #8B6B44; 
-            --light-brown: #D9B88C; --gold: 
+            --light-brown: #D9B88C; --gold:
             #FFD700;
             --cream: #F5E6D3; --text-light: #FFF; 
             --text-dark: #2C1810;
@@ -160,9 +160,9 @@ lang="fa" dir="rtl"> <head>
     </style> </head> <body> <div 
     class="profile-container">
         <div class="header"> <h2 
-            class="profile-title">پروفایل 
-            کاربری</h2> <div 
-            class="user-info"><?= $email ?></div>
+            class="profile-title">پروفایل
+‎ کاربری</h2> <div class="user-info"><?= $email 
+            ?></div>
         </div> <form method="POST"> <div 
             class="form-group">
                 <label>نام کاربری:</label> <input 
@@ -186,7 +186,6 @@ lang="fa" dir="rtl"> <head>
                 <button type="submit" class="btn 
                 save-btn">ذخیره تغییرات</button> 
                 <a href="/English/index.php" 
-                class="btn back-btn">بازگشت به 
-                خانه</a>
-            </div> </form> </div> </body>
+                class="btn back-btn">بازگشت به
+‎ خانه</a> </div> </form> </div> </body>
 </html>
