@@ -48,8 +48,7 @@ class PurchaseController { private
     public function displayPurchaseHistory() { 
         try {
             $purchases = 
-            $this->purchaseRepository->getPurchaseHistory
-ByEmail($_SESSION['email']); 
+            $this->purchaseRepository->getPurchaseHistoryByEmail($_SESSION['email']); 
             $this->renderPurchaseTable($purchases);
         } catch (Exception $e) {
             error_log($e->getMessage()); 
@@ -80,29 +79,32 @@ ByEmail($_SESSION['email']);
                     foreach ($purchases as 
                     $purchase): ?>
                         <tr> <td><?php echo 
-                            htmlspecialchars($purchase['e
-mail'] ?? ''); ?></td> <td><?php echo 
-                            htmlspecialchars($purchase['u
-ser_id'] ?? ''); ?></td> <td 
-class="hash-cell"><?php
-                            echo 
-                            htmlspecialchars($purchase['t
-ransaction_hash'] ?? ''); ?></td> <td 
+                            htmlspecialchars($purchase['email'] 
+                            ?? ''); ?></td> 
+                            <td><?php echo 
+                            htmlspecialchars($purchase['user_id'] 
+                            ?? ''); ?></td> <td 
                             class="hash-cell"><?php 
                             echo 
-                            htmlspecialchars($purchase['d
-eposit_address'] ?? ''); ?></td> <td 
+                            htmlspecialchars($purchase['transaction_hash'] 
+                            ?? ''); ?></td> <td 
+                            class="hash-cell"><?php 
+                            echo 
+                            htmlspecialchars($purchase['deposit_address'] 
+                            ?? ''); ?></td> <td 
                             class="amount-cell"><?php 
                             echo 
-                            htmlspecialchars($purchase['a
-mount_trx'] ?? ''); ?></td> <td 
+                            htmlspecialchars($purchase['amount_trx'] 
+                            ?? ''); ?></td> <td 
                             class="date-cell"><?php 
                             echo 
                             htmlspecialchars(date('Y/m/d 
                             H:i', 
-                            strtotime($purchase['created_
-at']))); ?></td> </tr> <?php endforeach; ?> 
-                </tbody> </table> </div> </body>
+                            strtotime($purchase['created_at']))); 
+                            ?></td>
+                        </tr> <?php endforeach; 
+                    ?>
+                </tbody> </table> </div> </body> 
         </html> <?php
     }
     private function renderErrorMessage($message) 
@@ -123,4 +125,4 @@ try { $servername = "localhost"; $username =
     unexpected error occurred. Please try again 
     later.");
 }
-?
+?>
